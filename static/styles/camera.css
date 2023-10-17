@@ -1,0 +1,12 @@
+.configure-camera-form{
+    display: flex;
+    flex-direction: column;
+
+
+}
+
+.form-input-{
+    display: flex;
+    justify-content: space-between; 
+    margin-block: 10px;
+}

@@ -1,0 +1,38 @@
+.reports{
+    max-height: 80vh;
+}
+
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-family: Arial, sans-serif;
+  }
+
+  th {
+    color: #ffffff;
+    font-weight: bold;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #818181;
+  }
+  
+  tr:hover {
+    background-color: #818181;
+  }
+  
+
+
+  
