@@ -5,9 +5,10 @@ app=Flask(__name__)
 app.config["SECRET"] = "secret";
 socketIO = SocketIO(app, cors_allowed_origins="*");
  
+
 @app.route("/")
 def dashboardPage():
-    return "Dashboard page";
+    return render_template("dashboard/dashboard.html");
 
 @app.route("/auth/login")
 def loginPage():
