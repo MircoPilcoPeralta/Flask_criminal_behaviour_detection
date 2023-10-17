@@ -1,76 +1,102 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Registro</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
-</head>
-<body class="login-page">
-
-  <div class="left-section">
-    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo de la aplicación" class="logo">
-  </div>
-
-  <div class="right-section">
-
-    <h1 class="section-title">Registro de Cuenta</h1>
-    
-    <div class="error-message" id="register-error-container">
-      <p id="register-error"></p>
+  <head>
+    <title>Registro</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/login.css') }}"
+    />
+  </head>
+  <body class="login-page">
+    <div class="left-section">
+      <img
+        src="{{ url_for('static', filename='images/logo.png') }}"
+        alt="Logo de la aplicación"
+        class="logo"
+      />
     </div>
-    
-    <div class="login-section">
-      <h2>Crear una cuenta</h2>
-        <p> 
-            <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Logo_informations.svg/1024px-Logo_informations.svg.png" 
-                alt="info"
-                height="15px"
-                width="15px"
-            > Por favor, ingresa los siguientes datos</p>
 
-      <form id="register-form" novalidate>
-        <div class="form-group">
-          <label for="username">Nombre completo:</label>
-          <input class="form-input" type="text" id="name-register-input" required>
-        </div>
-        <div class="form-group">
-          <label for="email">Correo electrónico:</label>
-          <input class="form-input" type="email" id="email-register-input" name="email" required>
-        </div>
-        <div class="form-group">
-          <label for="password">Contraseña:</label>
-          <input class="form-input" type="password" id="password-register-input" name="password" required>
-        </div>
-        <div class="form-group">
-          <label for="confirm-password">Confirmar Contraseña:</label>
-          <input class="form-input" type="password" id="confirm-password-register-input" name="confirmPassword" required>
-        </div>
-        <div class="form-group">
-          <button class="submit-btn"> Registrarse </button>
-        </div>
+    <div class="right-section">
+      <h1 class="section-title">Registro de Cuenta</h1>
 
-        <p class="recomendation">
-          <span>
-            ¿Ya tienes una cuenta? <a href="/auth/login" class="redirect-text">Iniciar Sesión</a>
-          </span>  
-          <span>
-            ó también puedes <a href="/" class="redirect-text">Acceder sin iniciar sesión</a>
-          </span>
+      <div class="error-message" id="register-error-container">
+        <p id="register-error"></p>
+      </div>
+
+      <div class="login-section">
+        <h2>Crear una cuenta</h2>
+        <p>
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Logo_informations.svg/1024px-Logo_informations.svg.png"
+            alt="info"
+            height="15px"
+            width="15px"
+          />
+          Por favor, ingresa los siguientes datos
         </p>
-          
-      </form>
+
+        <form id="register-form" novalidate>
+          <div class="form-group">
+            <label for="username">Nombre completo:</label>
+            <input
+              class="form-input"
+              type="text"
+              id="name-register-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">Correo electrónico:</label>
+            <input
+              class="form-input"
+              type="email"
+              id="email-register-input"
+              name="email"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Contraseña:</label>
+            <input
+              class="form-input"
+              type="password"
+              id="password-register-input"
+              name="password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="confirm-password">Confirmar Contraseña:</label>
+            <input
+              class="form-input"
+              type="password"
+              id="confirm-password-register-input"
+              name="confirmPassword"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <button class="submit-btn">Registrarse</button>
+          </div>
+
+          <p class="recomendation">
+            <span>
+              ¿Ya tienes una cuenta?
+              <a href="/auth/login" class="redirect-text">Iniciar Sesión</a>
+            </span>
+            <span>
+              ó también puedes
+              <a href="/" class="redirect-text">Acceder sin iniciar sesión</a>
+            </span>
+          </p>
+        </form>
+      </div>
     </div>
-  </div>
-  <script src="{{ url_for('static', filename='scripts/formScript.js') }}" ></script>
-  <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
-  <script>
-    document.getElementById("register-form").addEventListener("submit", onRegister)
-  </script>
-  <script>
-    loadCurrentConnectedCameras();
-  </script>
-</body>
+    <script src="{{ url_for('static', filename='scripts/formScript.js') }}"></script>
+    <script>
+      document
+        .getElementById("register-form")
+        .addEventListener("submit", onRegister);
+    </script>
+  </body>
 </html>
-
-
-
