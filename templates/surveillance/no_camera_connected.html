@@ -1,0 +1,90 @@
+{% extends "./BaseTemplates/surveillanceLayout.html" %} 
+
+{% block pageTitle %} 
+    Vigilancia 
+{% endblock %} 
+
+{% block additionalStyles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}">
+{% endblock %}
+
+{% block mainContent %}
+    <section id="info">
+    </section>
+
+    <section class="content">
+        <h1>Vigilancia</h1>
+            <div class="centered-container">
+
+                {% if selected_cameras|length == 0 %}
+                <div class="no-selected-camera">
+                    <img
+                    class="no-selected-camera--img"
+                    src="{{ url_for("static", filename="images/no_camera_selected.png") }}" 
+                    alt="no camera selected"
+                    height="150px"
+                    width="150px"
+                    >
+
+                    <img 
+                        class="deny-icon"
+                        src="{{ url_for("static", filename="images/x_icon.png" ) }}" 
+                        alt="deny" 
+                        height="30px"
+                        width="30px"
+                    >
+                </div>
+
+                <p>No se selecciono una camara.</p>
+                <button class="btn-cyan" onclick="modal.openModal()" > Agregar camara. </button>
+                
+                {% endif %}
+
+            </div>
+
+            <div id="select-camera-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="modal.closeModal()">&times;</span>
+                    <h3 class="modal-header">Selecciona una cámara</h3>
+
+                    <form 
+                        class="select-camera-form" 
+                        novalidate 
+                        action="/surveillance/register-camera" 
+                        method="post"
+                        >
+
+                        <div class="form-error-message" id="camera-form-error-container">
+                            <p id="camera-form-error"></p>
+                        </div>
+                    
+                        <div class="form-input">
+                            <label>Nombre de la cámara <span class="text-red">*</span>: </label>
+                            <input type="text" placeholder="Nombre de la cámara" class="input" id="camera-name" name="camera_name"> 
+                        </div>
+                        
+                        <div class="form-input">
+                            <label> modelo <span class="text-red">*</span>: </label>
+                            <select name="camera-select" class="input" id="camera-id">
+                                    <option disabled selected> Seleccione una cámara </option>
+                                    {% for camera in connected_cameras %}
+                                    <option value={{camera.id}}>{{ camera.name }}</option>
+                                    {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button class="btn-cyan" type="button" onclick="registerCamera(()=>modal.closeModal());">Aceptar</button>
+                            <button class="btn-red" onclick="modal.closeModal()" > Cancelar</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+    </section>
+{% endblock %} 
+
+{% block scripts %}
+
+{% endblock %}
