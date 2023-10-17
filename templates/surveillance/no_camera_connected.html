@@ -86,5 +86,21 @@
 {% endblock %} 
 
 {% block scripts %}
+    <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/date.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/Modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
 
+    <script>
+        modal = new Modal("select-camera-modal");
+
+        window.onclick = function (event) {
+            if (event.target.className == "modal") {
+                modal.closeModal();
+            }
+        };
+    </script>
+    <script>
+        loadCurrentConnectedCameras();
+    </script>
 {% endblock %}
