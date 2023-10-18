@@ -205,13 +205,32 @@
 
 <script>
   modal = new Modal("add-camera-modal");
-
   window.onclick = function (event) {
       if (event.target.className == "modal") {
           modal.closeModal();
       }
   };
 </script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDyTwb0iWDaFjWu8beY-QxkO2FD0hIeJX4",
+    authDomain: "sisdetectionai.firebaseapp.com",
+    projectId: "sisdetectionai",
+    storageBucket: "sisdetectionai.appspot.com",
+    messagingSenderId: "450200485952",
+    appId: "1:450200485952:web:7a31a81947f0c3e6a1dfa5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+</script>
+
+
+
 
 
 <script> 
@@ -227,6 +246,17 @@ window.onclick = function (event) {
 };
 </script>
 
+<script>
+const getDecodedImage = (encodedImage) => {
+  try {
+    const encodedImageList = encodedImage;
+    const encodedImageArray = new Uint8Array(encodedImageList);
+    return new Blob([encodedImageArray], { type: "image/jpeg" });
+  } catch (error) {
+    return "";
+  }
+}
+</script>
 
 <script type="module">
 const socketio = io.connect('http://localhost:5000');
