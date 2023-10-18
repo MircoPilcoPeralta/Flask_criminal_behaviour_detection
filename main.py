@@ -327,14 +327,18 @@ def registerCameraPage():
     addCameras(request.json)
     return redirect("surveillance", 200);
 
-
 @app.route("/video_feed/<id>")
 def video_feed(id):
     return Response(detect( int(id) ), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
+@socketIO.on('connect')
+def connect():
+    print('client connected');
 
-
+@socketIO.on("detections")
+def handle_detections():
+    send("mensaje del servidor", broadcast=True)
 
 
 if __name__ == "__main__":
