@@ -2,10 +2,65 @@ from flask import Flask, render_template, request, jsonify, redirect, Response;
 from flask_socketio import SocketIO, send
 import wmi;
 
+import mediapipe as mp
+import utils.drawer as drawer;
+from  utils.model_configuration import ModelConfiguration;
+from utils.multipose_detector import MultiposeDetector;
+
+import tensorflow_hub as hub
+
+
+from object_detection.utils import config_util
+from object_detection.protos import pipeline_pb2
+from google.protobuf import text_format
+
+import cv2 
+import numpy as np
+import tensorflow as tf
+from matplotlib import pyplot as plt
+from PIL import Image
+from io import BytesIO
+
+from object_detection.utils import config_util
+from object_detection.protos import pipeline_pb2
+from google.protobuf import text_format
+
+import os
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as viz_utils
+from object_detection.builders import model_builder
+
+import datetime
+from collections import Counter
+
+import base64
+
 app=Flask(__name__)
 app.config["SECRET"] = "secret";
 socketIO = SocketIO(app, cors_allowed_origins="*");
- 
+
+
+ANNOTATION_PATH = "./Tensorflow/custom-models/ssd-obj-detection/annotations"
+CHECKPOINT_PATH = "./Tensorflow/custom-models/ssd-obj-detection/models"
+MODEL_PATH = './Tensorflow/custom-models/ssd-obj-detection/models'
+CHECKPOINT_NAME = 'ckpt-6'
+CONFIG_PATH = './Tensorflow/custom-models/ssd-obj-detection/pipeline.config'
+
+
+
+# carga del archivo pipeline 
+configs = config_util.get_configs_from_pipeline_file(CONFIG_PATH)
+
+# carga del modele entrenado
+detection_model = model_builder.build(model_config=configs['model'], is_training=False)
+
+# restauracion del checkpoint
+ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
+ckpt.restore(os.path.join(MODEL_PATH, CHECKPOINT_NAME)).expect_partial()
+
+# archivo de categorizacion
+category_index = label_map_util.create_category_index_from_labelmap(ANNOTATION_PATH+'/label_map.pbtxt')
+
 
 
 def get_wired_cameras():
@@ -26,12 +81,60 @@ wired_cameras = get_wired_cameras()
 connected_devices = []
 available_models = ["No_model", "haar_cascade_face_detection", "criminal_behaviour_detection", "object_detection"]
 
+def get_camera_by_id(id):
+    global connected_devices;
+    find_camera = None;
+    for camera in connected_devices:
+        if (camera["id"] == id):
+            find_camera = camera
+    return find_camera;
+
 
 def addCameras ( new_connected_devices_state ):
     global connected_devices;
     connected_devices = new_connected_devices_state["cameras"];
 
+def update_camera(camera_id, request):
+    global connected_devices;
 
+    find_camera = None;
+    for camera in connected_devices:
+        if (camera["id"] == camera_id):
+            find_camera = camera
+
+    if (find_camera == None):
+        raise KeyError("Ninguna camara con el id: " + str(id) + " esta conectada al sistema")
+
+    find_camera["activeModel"] = request["activeModel"]
+    find_camera["relevantItems"] = request["relevantItems"]
+    find_camera["inferencePercentage"] = request["inferencePercentage"]
+
+
+def get_model(model_name):
+    if(model_name == "haar_cascade_face_detection"):
+        return cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml");
+
+    elif(model_name == "object_detection"):
+        return {"name": "object detection model"};
+
+    elif(model_name == "criminal_behaviour_detection"):
+        online_model = hub.load('https://tfhub.dev/google/movenet/multipose/lightning/1')
+        return online_model.signatures['serving_default']
+
+
+
+def draw_faces_box(detected_faces, frame):
+    for (x,y,w,h) in detected_faces:
+        cv2.rectangle( frame, (x,y), (x+w, y+h), (0,255,0), 2)  
+
+
+
+@tf.function
+def detect_fn(image):
+    image, shapes = detection_model.preprocess(image)
+    prediction_dict = detection_model.predict(image, shapes)
+    detections = detection_model.postprocess(prediction_dict, shapes)
+    return detections
 
 
 
@@ -61,24 +164,6 @@ def detect(camera_id):
 
                     draw_faces_box(detected_faces, frame)
 
-                    if(len(detected_faces) > 0):
-                        if (current_time - last_notification_time).total_seconds() >= 2:
-                            event_detected = True;
-                            event["message"] = "Nueva cara detectada"
-                            event["type"] = "warning"
-                            event["inference"] = 95
-                            last_notification_time = current_time
-
-                elif (camera["activeModel"] == "multipose-criminal_behaviour_detection"):
-                    # img = frame.copy()
-                    # img = tf.image.resize_with_pad(tf.expand_dims(img, axis=0), 256, 256)
-                    # input_img = tf.cast(img, dtype=tf.int32)
-
-                    # results = model(input_img)
-                    # keypoints_with_scores = results['output_0'].numpy()[:, :, :51].reshape((6, 17, 3))
-                    # loop_through_people(frame, keypoints_with_scores, EDGES, 0.2)
-
-                    emit_notification("persona moviendose", "warning")
 
                 elif (camera["activeModel"] == "object_detection"):
                     image_np = np.array(frame)
@@ -96,40 +181,10 @@ def detect(camera_id):
                     label_id_offset = 1
                     image_np_with_detections = image_np.copy()
 
-                    viz_utils.visualize_boxes_and_labels_on_image_array(
-                                image_np_with_detections,
-                                detections['detection_boxes'],
-                                detections['detection_classes']+label_id_offset,
-                                detections['detection_scores'],
-                                category_index,
-                                use_normalized_coordinates=True,
-                                max_boxes_to_draw=5,
-                                min_score_thresh=.5,
-                                agnostic_mode=False)
 
-                    if(len(detections['detection_classes']) > 0):
-                        if (current_time - last_notification_time).total_seconds() >= 2:
-                            
-                            max_value_index = np.argmax(detections['detection_scores'])
-                            max_percentage = detections['detection_scores'][max_value_index]
-
-            
-                            object_detected = "cuchillo";
-
-                            if(detections['detection_classes'][max_value_index] == 1): 
-                                object_detected = "pistola";
-                            
-                            if( max_percentage >= int(camera["inferencePercentage"])/100.0 ):
-                                event_detected = True;
-                                event["message"] = "Se ha detectado un "
-                                event["type"] = "warning"
-                                event["inference"] = 95
-                                last_notification_time = current_time
-                            # ToDo revisar el tiempo
-                            last_notification_time = current_time
 
                     frame = cv2.resize(image_np_with_detections, (800, 600))
-                       
+
             (flag, encodedImage) = cv2.imencode(".jpg", frame);
             
             if not flag:
@@ -143,10 +198,6 @@ def detect(camera_id):
             break; 
 
     cap.release();
-
-
-
-
 
 
 
