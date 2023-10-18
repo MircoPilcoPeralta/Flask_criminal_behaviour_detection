@@ -203,6 +203,15 @@
 <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/reports.js') }}"></script> 
 
+<script>
+  modal = new Modal("add-camera-modal");
+  window.onclick = function (event) {
+      if (event.target.className == "modal") {
+          modal.closeModal();
+      }
+  };
+</script>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
   import { getFirestore } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
@@ -221,17 +230,6 @@
 </script>
 
 
-<script>
-  modal = new Modal("add-camera-modal");
-
-  window.onclick = function (event) {
-      if (event.target.className == "modal") {
-          modal.closeModal();
-      }
-  };
-</script>
-
-
 <script> 
 const configCameraClosure = updateCameraClousure();
 </script>
@@ -246,146 +244,141 @@ window.onclick = function (event) {
 </script>
 
 <script>
-const getDecodedImage = (encodedImage) => {
-  try {
-    const encodedImageList = encodedImage;
-    const encodedImageArray = new Uint8Array(encodedImageList);
-    return new Blob([encodedImageArray], { type: "image/jpeg" });
-  } catch (error) {
-    return "";
+  const getDecodedImage = (encodedImage) => {
+    try {
+      const encodedImageList = encodedImage;
+      const encodedImageArray = new Uint8Array(encodedImageList);
+      return new Blob([encodedImageArray], { type: "image/jpeg" });
+    } catch (error) {
+      return "";
+    }
   }
-}
 </script>
 
 <script type="module">
-import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
+  import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
 
-const storage = getStorage();
+  const storage = getStorage();
 
-export const eventsClosure = ( htmlListElement ) => {
-  const listOfEvents = JSON.parse(localStorage.getItem("events") || "[]");
+  export const eventsClosure = ( htmlListElement ) => {
+    const listOfEvents = JSON.parse(localStorage.getItem("events") || "[]");
 
-  const updateLocalStorageEvents = () => {
-    if(listOfEvents.length === 0){
-      localStorage.setItem("events", "[]");
-      return;
-      } 
-    localStorage.removeItem("events")
-    localStorage.setItem("events", JSON.stringify(listOfEvents));    
-  }
-    
-
-  const rerenderEventsList = () =>{
-    htmlListElement.innerHTML = '';
-    
-    listOfEvents.forEach(event => {
-      const blobImage = getDecodedImage(event.encodedImage);
-      // uploadBytes(storageRef, blobImage).then((snapshot) => {
-      //   console.log('Uploaded a blob or file!');
-      // });
-
-      const imageUrl = URL.createObjectURL(blobImage);
-      // uploadImage(imageUrl)
-      htmlListElement.innerHTML += `
-      <li class="history__item--animated"> 
-        <img 
-          src=${imageUrl}
-          alt=${event.message}  
-          height = "110px"
-          width ="120px"
-        />
-        ${event.type === "danger"? 
-        `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="orange" />
-          <text x="50" y="50" text-anchor="middle" alignment-baseline="central" font-size="40" fill="white">!</text>
-        </svg>`
-        :               
-        `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="yellow" />
-          <text x="50" y="50" text-anchor="middle" alignment-baseline="central" font-size="40" fill="white">!</text>
-        </svg>`} <div > <p> ${event.message} </p> <p> <strong> hora: </strong> ${event.date} ${event.time}  </p> </div>
+    const updateLocalStorageEvents = () => {
+      if(listOfEvents.length === 0){
+        localStorage.setItem("events", "[]");
+        return;
+        } 
+      localStorage.removeItem("events")
+      localStorage.setItem("events", JSON.stringify(listOfEvents));    
+    }
       
+
+    const rerenderEventsList = () =>{
+      htmlListElement.innerHTML = '';
       
-      </li>`
-    });
+      listOfEvents.forEach(event => {
+        const blobImage = getDecodedImage(event.encodedImage);
+
+
+        const imageUrl = URL.createObjectURL(blobImage);
+
+        htmlListElement.innerHTML += `
+        <li class="history__item--animated"> 
+          <img 
+            src=${imageUrl}
+            alt=${event.message}  
+            height = "110px"
+            width ="120px"
+          />
+          ${event.type === "danger"? 
+          `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="orange" />
+            <text x="50" y="50" text-anchor="middle" alignment-baseline="central" font-size="40" fill="white">!</text>
+          </svg>`
+          :               
+          `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="yellow" />
+            <text x="50" y="50" text-anchor="middle" alignment-baseline="central" font-size="40" fill="white">!</text>
+          </svg>`} <div > <p> ${event.message} </p> <p> <strong> hora: </strong> ${event.date} ${event.time}  </p> </div>
+        
+        
+        </li>`
+      });
+    }
+
+
+    const uploadImage = async (name, encodedImage) =>{
+      const storageRef = ref(storage, name);
+      const result = await uploadBytes(storageRef, getDecodedImage(encodedImage));
+      const url = `https://firebasestorage.googleapis.com/v0/b/sisdetectionai.appspot.com/o/${result.metadata.fullPath}?alt=media&token=8672492b-e5c8-4aea-91fc-9615266b667e`
+      return url.replaceAll(" ", "%20")
+    }
+      
+    const decodeJWT = (token) => {
+  try {
+      const [, payloadBase64] = token.split('.');
+      return JSON.parse(atob(payloadBase64));
+  } catch (error) {
+      return null;
   }
-
-
-  const uploadImage = async (name, encodedImage) =>{
-    const storageRef = ref(storage, name);
-    const result = await uploadBytes(storageRef, getDecodedImage(encodedImage));
-    const url = `https://firebasestorage.googleapis.com/v0/b/sisdetectionai.appspot.com/o/${result.metadata.fullPath}?alt=media&token=8672492b-e5c8-4aea-91fc-9615266b667e`
-    return url.replaceAll(" ", "%20")
-  }
-    
-  const decodeJWT = (token) => {
-try {
-    const [, payloadBase64] = token.split('.');
-    return JSON.parse(atob(payloadBase64));
-} catch (error) {
-    return null;
 }
-}
-
 
 const getUserDataFromSavedToken = () =>{
-return decodeJWT(localStorage.getItem("token") || "");
+  return decodeJWT(localStorage.getItem("token") || "");
 }
 
+    const uploadReport = async (event) =>{
+      const loggedUser = getUserDataFromSavedToken();
+      const token = localStorage.getItem("token") || "";
 
+      const name = event.message + event.date + event.time + ".jpg";
+      const uploadedImage = await uploadImage(name, event.encodedImage)
 
-  const uploadReport = async (event) =>{
-    const loggedUser = getUserDataFromSavedToken();
-    const token = localStorage.getItem("token") || "";
+      const body = {
+        cameraName: "Camara casita",
+        inference: event.inference,
+        message: event.message,
+        date: event.date,
+        time: event.time,
+        imageURL: uploadedImage,
+        userId: loggedUser.id
+      }
 
-    const name = event.message + event.date + event.time + ".jpg";
-    const uploadedImage = await uploadImage(name, event.encodedImage)
+      const requestOptions ={
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+      }
+      
+    const response = await fetch("http://localhost:3000/api/v1/report", requestOptions);
+    console.log(response.json())
 
-    const body = {
-      cameraName: "Camara casita",
-      inference: event.inference,
-      message: event.message,
-      date: event.date,
-      time: event.time,
-      imageURL: uploadedImage,
-      userId: loggedUser.id
     }
 
-    const requestOptions ={
-      method: "POST",
-      headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body)
+
+    const addEvent = async (event) => {
+
+      if(listOfEvents.length === 6){
+        listOfEvents.pop();
+      } 
+      uploadReport(event)
+
+      
+      listOfEvents.unshift(event);
+      updateLocalStorageEvents();
+      rerenderEventsList();
     }
+
+    return { addEvent, rerenderEventsList, updateLocalStorageEvents };
     
-  const response = await fetch("http://localhost:3000/api/v1/report", requestOptions);
-  console.log(response.json())
-
   }
 
 
-  const addEvent = async (event) => {
 
-    if(listOfEvents.length === 6){
-      listOfEvents.pop();
-    } 
-    uploadReport(event)
-
-    
-    listOfEvents.unshift(event);
-    updateLocalStorageEvents();
-    rerenderEventsList();
-  }
-
-  return { addEvent, rerenderEventsList, updateLocalStorageEvents };
-  
-}
-
-
-
-const htmlListElement = document.getElementById('activities__history');
+  const htmlListElement = document.getElementById('activities__history');
 const eventsListenerClosure = eventsClosure(htmlListElement);
 
 eventsListenerClosure.rerenderEventsList();
@@ -393,11 +386,11 @@ eventsListenerClosure.rerenderEventsList();
 const socketio = io.connect('http://localhost:5000');
 
 socketio.on('connect', ()=>{
-console.log('Connected to the socket server')      
+  console.log('Connected to the socket server')      
 })
 
 socketio.on('event', (report)=>{
-eventsListenerClosure.addEvent(report);
+  eventsListenerClosure.addEvent(report);
 })
 </script>
 

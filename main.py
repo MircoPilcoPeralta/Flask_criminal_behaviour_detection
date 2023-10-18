@@ -189,6 +189,16 @@ def draw_connections(frame, keypoints, edges, confidence_threshold):
             cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 4)
 
 
+def emit_notification(event, encodedImage):
+    timestamp = datetime.datetime.now();
+    socketIO.emit( 'event', {
+        'type': event["type"],
+        'message': event["message"],
+        'inference': event["inference"],
+        'date': timestamp.strftime("%m-%d-%Y"),
+        'time': timestamp.strftime("%H:%M:%S"),
+        'encodedImage': encodedImage.tolist()
+    })
 
 
 def detect(camera_id):
@@ -217,6 +227,14 @@ def detect(camera_id):
 
                     draw_faces_box(detected_faces, frame)
 
+                    if(len(detected_faces) > 0):
+                        if (current_time - last_notification_time).total_seconds() >= 2:
+                            event_detected = True;
+                            event["message"] = "Nueva cara detectada"
+                            event["type"] = "warning"
+                            event["inference"] = 95
+                            last_notification_time = current_time
+
                 elif (camera["activeModel"] == "multipose-criminal_behaviour_detection"):
                     img = frame.copy()
                     img = tf.image.resize_with_pad(tf.expand_dims(img, axis=0), 256, 256)
@@ -226,6 +244,7 @@ def detect(camera_id):
                     keypoints_with_scores = results['output_0'].numpy()[:, :, :51].reshape((6, 17, 3))
                     loop_through_people(frame, keypoints_with_scores, EDGES, 0.2)
 
+                    emit_notification("persona moviendose", "warning")
 
                 elif (camera["activeModel"] == "object_detection"):
                     image_np = np.array(frame)
@@ -239,7 +258,42 @@ def detect(camera_id):
                     
                     detections['num_detections'] = num_detections
                     detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
+
+                    label_id_offset = 1
                     image_np_with_detections = image_np.copy()
+
+                    viz_utils.visualize_boxes_and_labels_on_image_array(
+                                image_np_with_detections,
+                                detections['detection_boxes'],
+                                detections['detection_classes']+label_id_offset,
+                                detections['detection_scores'],
+                                category_index,
+                                use_normalized_coordinates=True,
+                                max_boxes_to_draw=5,
+                                min_score_thresh=.5,
+                                agnostic_mode=False)
+
+                    if(len(detections['detection_classes']) > 0):
+                        if (current_time - last_notification_time).total_seconds() >= 2:
+                            
+                            max_value_index = np.argmax(detections['detection_scores'])
+                            max_percentage = detections['detection_scores'][max_value_index]
+
+            
+                            object_detected = "cuchillo";
+
+                            if(detections['detection_classes'][max_value_index] == 1): 
+                                object_detected = "pistola";
+                            
+                            if( max_percentage >= int(camera["inferencePercentage"])/100.0 ):
+                                event_detected = True;
+                                event["message"] = "Se ha detectado un "
+                                event["type"] = "warning"
+                                event["inference"] = 95
+                                last_notification_time = current_time
+                            # ToDo revisar el tiempo
+                            last_notification_time = current_time
+
                     frame = cv2.resize(image_np_with_detections, (800, 600))
 
             (flag, encodedImage) = cv2.imencode(".jpg", frame);
@@ -255,8 +309,6 @@ def detect(camera_id):
             break; 
 
     cap.release();
-
-
 
 
 
@@ -327,14 +379,18 @@ def registerCameraPage():
     addCameras(request.json)
     return redirect("surveillance", 200);
 
-
 @app.route("/video_feed/<id>")
 def video_feed(id):
     return Response(detect( int(id) ), mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 
+@socketIO.on('connect')
+def connect():
+    print('new client connected');
 
-
+@socketIO.on("detections")
+def handle_detections():
+    send("mensaje del servidor", broadcast=True)
 
 
 if __name__ == "__main__":
