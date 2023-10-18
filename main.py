@@ -201,6 +201,23 @@ def emit_notification(event, encodedImage):
     })
 
 
+def update_camera(camera_id, request):
+    global connected_devices;
+
+    find_camera = None;
+    for camera in connected_devices:
+        if (camera["id"] == camera_id):
+            find_camera = camera
+
+    if (find_camera == None):
+        raise KeyError("Ninguna camara con el id: " + str(id) + " esta conectada al sistema")
+
+    find_camera["activeModel"] = request["activeModel"]
+    find_camera["relevantItems"] = request["relevantItems"]
+    find_camera["inferencePercentage"] = request["inferencePercentage"]
+
+
+
 def detect(camera_id):
     last_notification_time = datetime.datetime.now()
 
@@ -374,10 +391,38 @@ def CameraImagePage():
     elif(len(connected_devices) > 2 ):
         return redirect("surveillance/more-cameras-image");
 
+
 @app.route("/surveillance/register", methods = ["POST"])
 def registerCameraPage():
     addCameras(request.json)
     return redirect("surveillance", 200);
+
+
+
+
+
+
+
+
+
+
+@app.route("/surveillance/camera/<id>/config", methods=["PATCH"])
+def updateConnectedCameras(id):
+    result_code = 200
+    try:
+        update_camera(int(id), request.json)
+    except KeyError:
+        result_code = 404
+    return redirect("surveillance", result_code)
+
+
+@app.route("/surveillance/camera/<id>", methods = ["DELETE"])
+def disconnectCamera(id):
+    global connected_devices;
+    cameraId = int(id);
+    connected_devices = [camera for camera in connected_devices if camera["id"] != cameraId]
+    return redirect("surveillance", 200);
+
 
 @app.route("/video_feed/<id>")
 def video_feed(id):
@@ -387,6 +432,7 @@ def video_feed(id):
 @socketIO.on('connect')
 def connect():
     print('new client connected');
+
 
 @socketIO.on("detections")
 def handle_detections():
