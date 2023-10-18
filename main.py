@@ -40,28 +40,6 @@ app.config["SECRET"] = "secret";
 socketIO = SocketIO(app, cors_allowed_origins="*");
 
 
-ANNOTATION_PATH = "./Tensorflow/custom-models/ssd-obj-detection/annotations"
-CHECKPOINT_PATH = "./Tensorflow/custom-models/ssd-obj-detection/models"
-MODEL_PATH = './Tensorflow/custom-models/ssd-obj-detection/models'
-CHECKPOINT_NAME = 'ckpt-6'
-CONFIG_PATH = './Tensorflow/custom-models/ssd-obj-detection/pipeline.config'
-
-
-
-# carga del archivo pipeline 
-configs = config_util.get_configs_from_pipeline_file(CONFIG_PATH)
-
-# carga del modele entrenado
-detection_model = model_builder.build(model_config=configs['model'], is_training=False)
-
-# restauracion del checkpoint
-ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
-ckpt.restore(os.path.join(MODEL_PATH, CHECKPOINT_NAME)).expect_partial()
-
-# archivo de categorizacion
-category_index = label_map_util.create_category_index_from_labelmap(ANNOTATION_PATH+'/label_map.pbtxt')
-
-
 EDGES = {
     (0, 1): 'm',
     (0, 2): 'c',
@@ -85,6 +63,36 @@ EDGES = {
 
 
 
+
+ANNOTATION_PATH = "./assets/models/ssd object detecion/annotations"
+CHECKPOINT_PATH = "./assets/models/ssd object detecion/models"
+MODEL_PATH = './assets/models/ssd object detecion/models'
+CHECKPOINT_NAME = 'ckpt-4'
+CONFIG_PATH = './assets/models/ssd object detecion/pipeline.config'
+
+
+# carga del archivo pipeline 
+configs = config_util.get_configs_from_pipeline_file(CONFIG_PATH)
+
+# carga del modele entrenado
+detection_model = model_builder.build(model_config=configs['model'], is_training=False)
+
+# restauracion del checkpoint
+ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
+ckpt.restore(os.path.join(MODEL_PATH, CHECKPOINT_NAME)).expect_partial()
+
+# archivo de categorizacion
+category_index = label_map_util.create_category_index_from_labelmap(ANNOTATION_PATH+'/label_map.pbtxt')
+
+
+@tf.function
+def detect_fn(image):
+    image, shapes = detection_model.preprocess(image)
+    prediction_dict = detection_model.predict(image, shapes)
+    detections = detection_model.postprocess(prediction_dict, shapes)
+    return detections
+
+
 def get_wired_cameras():
     connected_cameras = [];
     index = 0;
@@ -97,11 +105,22 @@ def get_wired_cameras():
             connected_cameras.append( { "id": index,  "name": device.Dependent.Caption} )
             index = index + 1;
     
-    return connected_cameras; 
+    return connected_cameras;
 
+
+def releaseAllCameras():
+    global cap;
+    if(cap):
+        cap.release(); 
+
+
+read_1 = True
+cap = None
 wired_cameras = get_wired_cameras()
 connected_devices = []
 available_models = ["No_model", "haar_cascade_face_detection", "criminal_behaviour_detection", "object_detection"]
+
+
 
 def get_camera_by_id(id):
     global connected_devices;
@@ -110,7 +129,6 @@ def get_camera_by_id(id):
         if (camera["id"] == id):
             find_camera = camera
     return find_camera;
-
 
 def addCameras ( new_connected_devices_state ):
     global connected_devices;
@@ -132,6 +150,9 @@ def update_camera(camera_id, request):
     find_camera["inferencePercentage"] = request["inferencePercentage"]
 
 
+
+
+
 def get_model(model_name):
     if(model_name == "haar_cascade_face_detection"):
         return cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml");
@@ -143,22 +164,7 @@ def get_model(model_name):
         online_model = hub.load('https://tfhub.dev/google/movenet/multipose/lightning/1')
         return online_model.signatures['serving_default']
 
-
-
-def draw_faces_box(detected_faces, frame):
-    for (x,y,w,h) in detected_faces:
-        cv2.rectangle( frame, (x,y), (x+w, y+h), (0,255,0), 2)  
-
-
-
-@tf.function
-def detect_fn(image):
-    image, shapes = detection_model.preprocess(image)
-    prediction_dict = detection_model.predict(image, shapes)
-    detections = detection_model.postprocess(prediction_dict, shapes)
-    return detections
-
-
+        
 
 def loop_through_people(frame, keypoints_with_scores, edges, confidence_threshold): 
     for person in keypoints_with_scores:
@@ -189,6 +195,7 @@ def draw_connections(frame, keypoints, edges, confidence_threshold):
             cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 4)
 
 
+
 def emit_notification(event, encodedImage):
     timestamp = datetime.datetime.now();
     socketIO.emit( 'event', {
@@ -199,6 +206,10 @@ def emit_notification(event, encodedImage):
         'time': timestamp.strftime("%H:%M:%S"),
         'encodedImage': encodedImage.tolist()
     })
+
+def draw_faces_box(detected_faces, frame):
+    for (x,y,w,h) in detected_faces:
+        cv2.rectangle( frame, (x,y), (x+w, y+h), (0,255,0), 2)  
 
 
 def detect(camera_id):
@@ -232,10 +243,10 @@ def detect(camera_id):
                             event_detected = True;
                             event["message"] = "Nueva cara detectada"
                             event["type"] = "warning"
-                            event["inference"] = 95
+                            event["inference"] = camera["inferencePercentage"]
                             last_notification_time = current_time
 
-                elif (camera["activeModel"] == "multipose-criminal_behaviour_detection"):
+                elif (camera["activeModel"] == "criminal_behaviour_detection"):
                     img = frame.copy()
                     img = tf.image.resize_with_pad(tf.expand_dims(img, axis=0), 256, 256)
                     input_img = tf.cast(img, dtype=tf.int32)
@@ -244,7 +255,12 @@ def detect(camera_id):
                     keypoints_with_scores = results['output_0'].numpy()[:, :, :51].reshape((6, 17, 3))
                     loop_through_people(frame, keypoints_with_scores, EDGES, 0.2)
 
-                    emit_notification("persona moviendose", "warning")
+                    if (current_time - last_notification_time).total_seconds() >= 2:
+                        event_detected = True;
+                        event["message"] = "Pose detectada"
+                        event["type"] = "warning"
+                        event["inference"] = camera["inferencePercentage"]
+                        last_notification_time = current_time
 
                 elif (camera["activeModel"] == "object_detection"):
                     image_np = np.array(frame)
@@ -289,7 +305,7 @@ def detect(camera_id):
                                 event_detected = True;
                                 event["message"] = "Se ha detectado un "
                                 event["type"] = "warning"
-                                event["inference"] = 95
+                                event["inference"] = camera["inferencePercentage"]
                                 last_notification_time = current_time
                             # ToDo revisar el tiempo
                             last_notification_time = current_time
@@ -307,14 +323,7 @@ def detect(camera_id):
         else:
             cap.release(); 
             break; 
-
     cap.release();
-
-
-
-
-
-
 
 
 
@@ -322,14 +331,15 @@ def detect(camera_id):
 def dashboardPage():
     return render_template("dashboard/dashboard.html");
 
+
 @app.route("/auth/login")
 def loginPage():
     return render_template("login/login.html");
 
+
 @app.route("/auth/register")
 def registerPage():
     return render_template("register/register.html");
-
 
 
 @app.route("/surveillance/one-camera-image")
@@ -345,11 +355,13 @@ def twoCameraImage():
         return redirect("/surveillance");
     return "two camera image"
 
+
 @app.route("/surveillance/more-cameras-image")
 def moreThanTwoCameraImage():
     if(len(connected_devices) == 0 or len(connected_devices) < 3 ):
         return redirect("/surveillance");
     return "more than one camera image"
+
 
 @app.route("/surveillance/no-cameras-added")
 def noCamerasAdded():
@@ -357,6 +369,7 @@ def noCamerasAdded():
     if(len(connected_devices) > 0 ):
         return redirect("/surveillance");
     return render_template("surveillance/no_camera_connected.html", connected_cameras = wired_cameras, connected_devices=connected_devices );
+
 
 @app.route("/surveillance")
 def CameraImagePage():
@@ -374,10 +387,30 @@ def CameraImagePage():
     elif(len(connected_devices) > 2 ):
         return redirect("surveillance/more-cameras-image");
 
+
 @app.route("/surveillance/register", methods = ["POST"])
 def registerCameraPage():
     addCameras(request.json)
     return redirect("surveillance", 200);
+
+
+@app.route("/surveillance/camera/<id>/config", methods=["PATCH"])
+def updateConnectedCameras(id):
+    result_code = 200
+    try:
+        update_camera(int(id), request.json)
+    except KeyError:
+        result_code = 404
+    return redirect("surveillance", result_code)
+
+
+@app.route("/surveillance/camera/<id>", methods = ["DELETE"])
+def disconnectCamera(id):
+    global connected_devices;
+    cameraId = int(id);
+    connected_devices = [camera for camera in connected_devices if camera["id"] != cameraId]
+    return redirect("surveillance", 200);
+
 
 @app.route("/video_feed/<id>")
 def video_feed(id):
@@ -387,6 +420,7 @@ def video_feed(id):
 @socketIO.on('connect')
 def connect():
     print('new client connected');
+
 
 @socketIO.on("detections")
 def handle_detections():
