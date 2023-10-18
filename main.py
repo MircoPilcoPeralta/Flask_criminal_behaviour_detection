@@ -25,6 +25,12 @@ def get_wired_cameras():
 wired_cameras = get_wired_cameras();
 connected_devices = [];
 
+def addCameras ( new_connected_devices_state ):
+    global connected_devices;
+    connected_devices = new_connected_devices_state["cameras"];
+
+
+
 @app.route("/")
 def dashboardPage():
     return render_template("dashboard/dashboard.html");
@@ -43,7 +49,8 @@ def registerPage():
 def oneCameraImage():
     if(len(connected_devices) != 1 ):
         return redirect("/surveillance");
-    return "one camera image"
+    return render_template("surveillance/one_camera_image.html", connected_cameras=wired_cameras, connected_devices=connected_devices, available_models=available_models );
+
 
 @app.route("/surveillance/two-camera-image")
 def twoCameraImage():
@@ -80,7 +87,10 @@ def CameraImagePage():
     elif(len(connected_devices) > 2 ):
         return redirect("surveillance/more-cameras-image");
 
-
+@app.route("/surveillance/register", methods = ["POST"])
+def registerCameraPage():
+    addCameras(request.json)
+    return redirect("surveillance", 200);
 
 
 

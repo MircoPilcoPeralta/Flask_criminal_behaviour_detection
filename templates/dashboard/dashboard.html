@@ -1,0 +1,22 @@
+{% extends "./BaseTemplates/surveillanceLayout.html" %} 
+
+{% block pageTitle %} 
+  Dashboard 
+{% endblock %} 
+
+{% block additionalStyles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}">
+{% endblock %}
+
+{% block mainContent %}
+  <section class="content">
+    <h1>Panel de estadisticas</h1>
+    </div>
+  </section>
+{% endblock %} 
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
+{% endblock %}
+
+
