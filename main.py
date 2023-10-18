@@ -129,6 +129,15 @@ def draw_faces_box(detected_faces, frame):
 
 
 
+@tf.function
+def detect_fn(image):
+    image, shapes = detection_model.preprocess(image)
+    prediction_dict = detection_model.predict(image, shapes)
+    detections = detection_model.postprocess(prediction_dict, shapes)
+    return detections
+
+
+
 def detect(camera_id):
     last_notification_time = datetime.datetime.now()
 
@@ -155,14 +164,6 @@ def detect(camera_id):
 
                     draw_faces_box(detected_faces, frame)
 
-                    if(len(detected_faces) > 0):
-                        if (current_time - last_notification_time).total_seconds() >= 2:
-                            event_detected = True;
-                            event["message"] = "Nueva cara detectada"
-                            event["type"] = "warning"
-                            event["inference"] = 95
-                            last_notification_time = current_time
-
 
                 elif (camera["activeModel"] == "object_detection"):
                     image_np = np.array(frame)
@@ -180,37 +181,7 @@ def detect(camera_id):
                     label_id_offset = 1
                     image_np_with_detections = image_np.copy()
 
-                    viz_utils.visualize_boxes_and_labels_on_image_array(
-                                image_np_with_detections,
-                                detections['detection_boxes'],
-                                detections['detection_classes']+label_id_offset,
-                                detections['detection_scores'],
-                                category_index,
-                                use_normalized_coordinates=True,
-                                max_boxes_to_draw=5,
-                                min_score_thresh=.5,
-                                agnostic_mode=False)
 
-                    if(len(detections['detection_classes']) > 0):
-                        if (current_time - last_notification_time).total_seconds() >= 2:
-                            
-                            max_value_index = np.argmax(detections['detection_scores'])
-                            max_percentage = detections['detection_scores'][max_value_index]
-
-            
-                            object_detected = "cuchillo";
-
-                            if(detections['detection_classes'][max_value_index] == 1): 
-                                object_detected = "pistola";
-                            
-                            if( max_percentage >= int(camera["inferencePercentage"])/100.0 ):
-                                event_detected = True;
-                                event["message"] = "Se ha detectado un "
-                                event["type"] = "warning"
-                                event["inference"] = 95
-                                last_notification_time = current_time
-                            # ToDo revisar el tiempo
-                            last_notification_time = current_time
 
                     frame = cv2.resize(image_np_with_detections, (800, 600))
 
