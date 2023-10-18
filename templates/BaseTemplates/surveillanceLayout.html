@@ -10,7 +10,9 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles/main.css') }}"
     />
-    {% block additionalStyles %} {% endblock %}
+    {% block additionalStyles %} {% endblock %}  
+    {% block headerScripts %} {% endblock %}
+
   </head>
   <body>
     <aside class="sidebar" id="sidebar">
@@ -26,7 +28,11 @@
       <a href="/reports" class="sidebar-redirect-btn"> Reportes </a>
     </aside>
 
-    <main class="main-content">{% block mainContent %} {% endblock %}</main>
+    <main class="main-content">
+      {% block mainContent %} 
+      {% endblock %}
+    </main>
+    
     {% block scripts %} 
     {% endblock %}
   </body>
