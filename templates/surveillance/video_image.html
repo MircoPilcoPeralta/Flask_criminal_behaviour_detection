@@ -19,11 +19,11 @@
   <section id="info"></section>
   <section class="content">
       <h1>Surveillance Page</h1>
-
+      
       <section class="surveillance-panel">
         <section id="one-camera-panel">
             <div class="camera-image-container">     
-              <img src="{{ url_for('video_feed', id = connected_devices[0].id )}}" width="100%" />
+              <img src="{{ url_for('video_feed', id = connected_devices[0].id ) }}" width="100%" />
             </div>
         </section>
 
@@ -33,8 +33,6 @@
             <h3> Cámaras </h3>                     
             <button class="btn-cyan add-camera-btn" onclick="modal.openModal()" > Agregar </button>
             </div>
-
-
 
             <hr>
               <ul class="cameras-list">
@@ -212,7 +210,7 @@
 <script src="{{ url_for('static', filename='scripts/Modal.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/localstorage.js') }}"></script>   
-<!-- <script src="{{ url_for('static', filename='scripts/removeCamera.js') }}"></script>   -->
+<script src="{{ url_for('static', filename='scripts/removeCamera.js') }}"></script>  
 <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts/reports.js') }}"></script> 
 
@@ -355,7 +353,7 @@ return decodeJWT(localStorage.getItem("token") || "");
     const uploadedImage = await uploadImage(name, event.encodedImage)
 
     const body = {
-      cameraName: "Camara casita",
+      cameraName: event.cameraName? event.cameraName: "cámara",
       inference: event.inference,
       message: event.message,
       date: event.date,
@@ -412,48 +410,6 @@ eventsListenerClosure.addEvent(report);
 })
 </script>
 
-
-<script>
-</script>
-
-
-<script>
-  
-  </script>
-
-
-<script>
-
-
-  
-  
-  </script>
-
-
-<script>
-
-  const removeCamera = (id) => {
-  
-  console.log(loadItem("connected_cameras"), id)
-  
-  const updated_connected_cameras = loadItem("connected_cameras").filter(
-    (camera) => camera.id != id
-  );
-  
-    saveConnectedCamerasList(updated_connected_cameras);
-    
-    fetch(`/surveillance/camera?id=${id}`, {
-        method: 'delete'
-      }).then(
-        ()=> window.location.replace("/surveillance")
-       );
-  
-  
-  };
-  
-  
-  
-  </script>
 
 
 {% endblock %}

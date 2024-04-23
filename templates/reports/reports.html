@@ -1,0 +1,177 @@
+{% extends "./BaseTemplates/surveillanceLayout.html" %} 
+
+{% block pageTitle %} 
+    Vigilancia 
+{% endblock %} 
+
+{% block additionalStyles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}">
+{% endblock %}
+
+{% block mainContent %}
+    <section id="info">
+    </section>
+    <section class="content">
+        <h1>Vigilancia</h1>
+            <div class="centered-container">
+                <div id="reports-info" >
+                    <h3>Cargando reportes...</h3>
+                </div>
+            </div>
+            <div id="remove-report-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="removeReportModal.closeModal()">&times;</span>
+                    <h3 class="modal-header">Selecciona una cámara</h3>
+
+                    <form 
+                        class="select-camera-form" 
+                        novalidate 
+                        >
+                        <p> Seguro que quieres eliminar este reporte? </p>
+
+                        <div class="form-buttons">
+                            <button class="btn-cyan" type="button" onclick="removeReport()">Aceptar</button>
+                            <button class="btn-red" onclick="removeReportModal.closeModal()" type="button"> Cancelar</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </section>
+{% endblock %} 
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/date.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/Modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
+
+    <script>
+        const removeReportModal = new Modal("remove-report-modal");
+
+        window.onclick = function (event) {
+            if (event.target.className == "modal") {
+                removeReportModal.closeModal();
+            }
+        };
+    </script>
+    <script>
+        const ReportsAPI = "http://localhost:3000/api/v1/report";
+
+        const decodeJWT = (token) => {
+            try {
+                const [, payloadBase64] = token.split('.');
+                return JSON.parse(atob(payloadBase64));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        const getUserDataFromSavedToken = () =>{
+            return decodeJWT(localStorage.getItem("token") || "");
+        }
+    </script>
+    <script>
+        let reportIdToDelete = null;
+
+        const targetReportToDelete = (reportId) => {
+            reportIdToDelete = reportId;
+            removeReportModal.openModal();
+        }
+
+        const removeReport = () => {
+            if(!reportIdToDelete){
+                return;
+            }
+
+            const requestOptions ={
+                method: "DELETE",
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+
+            const removeReportRequest = fetch(`${ReportsAPI}/${reportIdToDelete}`, requestOptions);
+            location.reload();
+        }
+
+    </script>
+
+    <script>
+         
+    </script>
+    <script>
+        const reportsInfoHTMLComponent = document.getElementById("reports-info");
+
+        const loggedUserId =getUserDataFromSavedToken().id;
+        const token = localStorage.getItem("token") || "";
+        
+        const requestOptions ={
+        method: "GET",
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+        }
+
+        const reportsRequest = fetch(`${ReportsAPI}?userId=${loggedUserId}`,requestOptions)
+        .then(res => res.json())
+        .then( response => {  
+            
+            if(!response.data){
+                reportsInfoHTMLComponent.innerHTML = "<h3>No tienes reportes guardados.</h3>"
+            }
+
+
+            let tableContent = "";
+
+            response.data.forEach(report => {
+                tableContent += `
+                <tr>
+                    <td>${report.cameraName}</td>
+                    <td>${report.message}</td>
+                    <td>${report.inference}%</td>
+                    <td>
+                        <img 
+                            src="${report.imageURL}"
+                            alt="${report.cameraName}"
+                            height="250px"
+                            width="250px"
+                        />
+                    </td>
+                    <td>${report.date}  ${report.time}</td>
+                    <td>
+                        <button onClick='targetReportToDelete("${report.id}")' class="btn-red" >
+                            Eliminar reporte
+                        </button>
+                    </td>
+                    
+                </tr>
+                
+                `;
+            });
+
+            reportsInfoHTMLComponent.innerHTML = `
+            <div class = "table-container">
+                <table>
+                    <tr>
+                        <th>Nombre de la cámara</th>
+                        <th>Descripción</th>
+                        <th>Confianza</th>
+                        <th>Imagen</th>
+                        <th>Fecha y hora</th>
+                        <th>Opciones</th>
+                    </tr>
+                    ${tableContent}
+                </table>
+            </div>
+            ` 
+        }) 
+    </script>
+
+<script>
+
+
+
+  </script>
+{% endblock %}

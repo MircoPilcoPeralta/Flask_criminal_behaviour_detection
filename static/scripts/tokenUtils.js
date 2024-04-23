@@ -11,5 +11,3 @@ const decodeJWT = (token) => {
 const getUserDataFromSavedToken = () =>{
     return decodeJWT(localStorage.getItem("token") || "");
 }
-
-

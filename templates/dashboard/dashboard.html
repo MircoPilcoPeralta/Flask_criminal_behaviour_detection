@@ -11,12 +11,113 @@
 {% block mainContent %}
   <section class="content">
     <h1>Panel de estadisticas</h1>
+    <div class="counter-container">
+      <div class="counter"> 
+        <p>
+          Numero de eventos detectados el día de hoy: 
+          <span id="current-day-detections-counter" ></span>
+        </p>
+      </div>
+
+      <div class="counter">
+        <p>
+          Numero de eventos detectados el mes actual: 
+          <span id="current-month-detections-counter"></span>
+        </p>
+      </div>
+
+      <div class="counter">
+        <p>
+          Numero de eventos detectados el año actual:
+          <span id="current-year-detections-counter"></span>
+        </p>
+
+      </div>
     </div>
   </section>
 {% endblock %} 
 
 {% block scripts %}
   <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
+
+  <script>
+    const ReportsAPI = "http://localhost:3000/api/v1/report";
+
+    const decodeJWT = (token) => {
+        try {
+            const [, payloadBase64] = token.split('.');
+            return JSON.parse(atob(payloadBase64));
+        } catch (error) {
+            return null;
+        }
+    }
+
+    const getUserDataFromSavedToken = () =>{
+        return decodeJWT(localStorage.getItem("token") || "");
+    }
+  </script>
+
+
+  <script >
+      const loggedUserId =getUserDataFromSavedToken().id;  
+
+      const token = localStorage.getItem("token") || "";
+        
+        const requestOptions ={
+        method: "GET",
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+        }
+
+        const currentDate = new Date();
+
+        const currentDayDetections = (reportsList) => {
+          return reportsList.filter(item => {
+                  const itemDate = new Date(item.date);
+                  return itemDate.toDateString() === currentDate.toDateString();
+                }).length;
+        }
+
+
+        const currentMonthDetections = (reportsList) => {
+          return reportsList.filter(item => {
+                  const itemDate = new Date(item.date);
+                  return itemDate.getMonth() === currentDate.getMonth() && itemDate.getFullYear() === currentDate.getFullYear();
+                }).length;
+        }
+
+        const currentYearDetections = (reportsList) => {
+          return reportsList.filter(item => {
+                  const itemDate = new Date(item.date);
+                  return itemDate.getFullYear() === currentDate.getFullYear();
+                }).length;
+        }
+
+        const renderCurrentDayReports = (reportsNumber) => {
+          const currentDayDetectionsCounterElement = document.getElementById("current-day-detections-counter");
+          currentDayDetectionsCounterElement.innerHTML = reportsNumber;
+        }
+
+        const renderCurrentMonthReports = (reportsNumber) => {
+          const currentMonthDetectionsCounterElement = document.getElementById("current-month-detections-counter");
+          currentMonthDetectionsCounterElement.innerHTML = reportsNumber;
+        }
+
+        const renderCurrentYearReports = (reportsNumber) => {
+          const currentYearDetectionsCounterElement = document.getElementById("current-year-detections-counter");
+          currentYearDetectionsCounterElement.innerText = reportsNumber;
+        }
+
+        const reportsRequest = fetch(`${ReportsAPI}?userId=${loggedUserId}`,requestOptions)
+        .then((retsult) => retsult.json())
+        .then((response)=>{
+          console.log(response.data)
+          const reports = response.data;
+          renderCurrentDayReports(currentDayDetections(reports));
+          renderCurrentMonthReports(currentMonthDetections(reports));
+          renderCurrentYearReports(currentYearDetections(reports));
+        })
+      
+  </script>
 {% endblock %}
-
-

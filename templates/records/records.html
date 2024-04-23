@@ -1,0 +1,56 @@
+{% extends "./BaseTemplates/surveillanceLayout.html" %} 
+
+{% block pageTitle %} 
+    Vigilancia 
+{% endblock %} 
+
+{% block additionalStyles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}">
+{% endblock %}
+
+{% block mainContent %}
+    <section id="info">
+    </section>
+
+    <section class="content">
+        <h1>Vigilancia</h1>
+            <div class="centered-container">
+
+                {% if selected_cameras|length == 0 %}
+                <div class="no-selected-camera">
+                    <img
+                    class="no-selected-camera--img"
+                    src="{{ url_for("static", filename="images/no_camera_selected.png") }}" 
+                    alt="no camera selected"
+                    height="150px"
+                    width="150px"
+                    >
+
+                    <img 
+                        class="deny-icon"
+                        src="{{ url_for("static", filename="images/x_icon.png" ) }}" 
+                        alt="deny" 
+                        height="30px"
+                        width="30px"
+                    >
+                </div>
+
+                <p>No se selecciono una camara.</p>
+                <button class="btn-cyan" onclick="modal.openModal()" > Agregar camara. </button>
+                
+                {% endif %}
+
+            </div>
+
+
+
+    </section>
+{% endblock %} 
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='scripts/session.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/date.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/Modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
+
+{% endblock %}

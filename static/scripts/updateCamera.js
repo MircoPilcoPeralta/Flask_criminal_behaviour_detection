@@ -6,7 +6,7 @@ function updateCameraClousure(){
     let currentId = -1;
 
     function loadCameraData (cameraId) {
-        currentId = Number(cameraId);
+        currentId = cameraId;
         currentCameraData = camerasList.find((camera)=> camera.id == currentId);
 
         detectionModelRef.value = currentCameraData.activeModel;
@@ -27,7 +27,7 @@ function updateCameraClousure(){
         updateCameraInLocalStorage();
     
     
-        fetch(`/surveillance/camera/${currentId}/config`, {
+        fetch(`/surveillance/camera/config?id=${currentId}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json'
@@ -56,26 +56,3 @@ function updateCameraClousure(){
 
     return { loadCameraData, updateCameraInLocalStorage, updateCamera  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -26,6 +26,8 @@
       <a href="/" class="sidebar-redirect-btn"> Home </a>
       <a href="/surveillance" class="sidebar-redirect-btn"> Vigilancia </a>
       <a href="/reports" class="sidebar-redirect-btn"> Reportes </a>
+
+      <button id="close-sesión-btn"> Cerrar sesión </button>
     </aside>
 
     <main class="main-content">
@@ -34,6 +36,16 @@
     </main>
     
     {% block scripts %} 
+    <script>
+
+      const closeSessionBtn = document.getElementById("close-sesión-btn");
+  
+      closeSessionBtn.addEventListener(()=>{
+        localStorage.removeItem("token");
+        location.reload();
+      })
+  
+    </script>
     {% endblock %}
   </body>
 </html>

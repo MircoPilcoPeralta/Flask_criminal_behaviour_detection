@@ -1,6 +1,13 @@
 const noLoggedUserPaths = ["/auth/login", "/auth/register"];
 const loggedUserPaths = ["/", "/surveillance/no-cameras-added", "/surveillance/one-camera-image", "/reports"]
 
+
+const closeSessionBtn = document.getElementById("close-sesión-btn");
+closeSessionBtn.addEventListener("click",()=>{
+  localStorage.removeItem("token");
+  location.reload();
+})
+
 const isAuthenticated = async() => {
     const token = localStorage.getItem("token") || "";
     const apiUrl = "http://localhost:3000/api/v1/user/validate-token";

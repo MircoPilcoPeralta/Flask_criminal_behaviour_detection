@@ -49,8 +49,8 @@ const registerCamera = () =>{
     }
 
     connectedCamerasList.push({ 
-        id: +id.value ,
-        name: cameraName.value, 
+        id: id.value ,
+        cameraName: cameraName.value, 
         model: id.value,
         activated: true,
         activeModel: "No_model" ,
@@ -96,5 +96,3 @@ const loadCurrentConnectedCameras = (page) =>{
         body: JSON.stringify(conected_cameras_object)
       })
 }
-
-

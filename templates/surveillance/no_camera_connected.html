@@ -37,7 +37,7 @@
 
                 <p>No se selecciono una camara.</p>
                 <button class="btn-cyan" onclick="modal.openModal()" > Agregar camara. </button>
-                
+                <button class="btn-cyan" onclick="recordModal.openModal()" > Analizar un video. </button>
                 {% endif %}
 
             </div>
@@ -50,8 +50,6 @@
                     <form 
                         class="select-camera-form" 
                         novalidate 
-                        action="/surveillance/register-camera" 
-                        method="post"
                         >
 
                         <div class="form-error-message" id="camera-form-error-container">
@@ -82,6 +80,36 @@
                 </div>
             </div>
 
+            <div id="select-record-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="recordModal.closeModal()">&times;</span>
+                    <h3 class="modal-header">Revisar grabaciones</h3>
+
+                    <form 
+                        class="select-camera-form" 
+                    >
+
+                        <div class="form-input">
+                            <label> Directorio de la grabación <span class="text-red">*</span>: </label>
+                            <input 
+                                type="text" 
+                                placeholder="Directorio de la grabación" 
+                                class="input" 
+                                id="record-route" 
+                                name="recor_route"
+                                required
+                            > 
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button class="btn-cyan" type="button" onclick="loadVideo();">Comenzar</button>
+                            <button class="btn-red" onclick="recordModal.closeModal()" > Cancelar</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
     </section>
 {% endblock %} 
 
@@ -90,7 +118,10 @@
     <script src="{{ url_for('static', filename='scripts/date.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/Modal.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/selectCamera.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='scripts/selectVideo.js') }}"></script>
+    <script>
+        loadCurrentConnectedCameras();
+    </script>
     <script>
         modal = new Modal("select-camera-modal");
 
@@ -101,6 +132,12 @@
         };
     </script>
     <script>
-        loadCurrentConnectedCameras();
+        recordModal = new Modal("select-record-modal");
+
+        window.onclick = function (event) {
+            if (event.target.className == "modal") {
+                modal.closeModal();
+            }
+        };
     </script>
 {% endblock %}

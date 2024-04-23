@@ -28,6 +28,3 @@ try {
 } catch (error) {
     console.log("Error al colocar la informacion de la fecha y hora en la sección de información,", error)
 }
-
-
-

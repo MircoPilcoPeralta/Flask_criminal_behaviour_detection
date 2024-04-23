@@ -57,7 +57,6 @@ const checkLoginForm = async () => {
       setTimeout(()=>{window.location.href = "/";}, 1000)
       
     }
-
 };
 
 const checkRegisterForm = async () =>{
@@ -106,9 +105,3 @@ const checkRegisterForm = async () =>{
   }
 
 }
-
-
-
-
-
-

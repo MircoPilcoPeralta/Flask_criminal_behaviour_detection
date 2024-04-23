@@ -11,5 +11,3 @@ const saveConnectedCamerasList = ( state ) =>{
 const getToken = () => {
     return localStorage.getItem("token") | "";
 }
-
-
